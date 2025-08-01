@@ -9,11 +9,11 @@ void loop() {
   float voltage = analogValue * (5.0 / 1023.0);
 
   // Print to Serial Monitor
-  Serial.print("Analog value: ");
-  Serial.print(analogValue);
-  Serial.print(" | Voltage: ");
-  Serial.print(voltage);
-  Serial.println(" V");
+  //Serial.print("Analog value: ");
+  //Serial.print(analogValue);
+  //Serial.print(" | Voltage: ");
+  Serial.println(voltage);
+  //Serial.println(" V");
 
-  delay(500); // Wait 500ms before next read
+  delay(100); // Wait 500ms before next read
 }
