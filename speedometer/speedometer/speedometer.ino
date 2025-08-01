@@ -38,7 +38,7 @@ void loop() {
   display.setTextColor(WHITE);
   display.setCursor(0, 10);
   // Display static text
-  display.println(c);
+  display.println(int(c));
   display.setTextSize(2);
   display.print("KM/h");
   display.display(); 
