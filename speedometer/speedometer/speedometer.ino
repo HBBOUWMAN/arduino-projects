@@ -20,7 +20,6 @@ unsigned long speed = 0;
 // ==== Setup ====
 void setup() {
   Serial.begin(9600);
-  pinMode(5, OUTPUT);
 
   // OLED init
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
@@ -108,9 +107,7 @@ void handleThresholdCrossing(float voltage, float threshold) {
       updateSpeed(timeBetweenTriggers);
       aboveThreshold = true;
     }
-    digitalWrite(5, HIGH);
   } else {
-    digitalWrite(5, LOW);
     aboveThreshold = false;
   }
 }
@@ -125,3 +122,8 @@ void loop() {
   sleep_cpu();
   sleep_disable();
 }
+
+
+// 4.4V battery @ 20mA ~ 0.088W
+// Sensor doesnt measure as accurate as with USB power, needs stronger field before activation. 
+// Maybe can change threshold voltage, use a better battery, or wait for a digital sensor.
