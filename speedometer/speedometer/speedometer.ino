@@ -36,13 +36,7 @@ void setup() {
   display.setCursor(20, 10);
   display.println("Speedometer v1.0");
 
-  showLoadingDots(">> Initializing", 5, 30, 3, 300);
-
-  display.setCursor(5, 45);
-  display.println(">> Ready!");
-  display.display();
-
-  delay(1000);  // 2 seconds to allow uploads
+  delay(2000);  // 2 seconds to allow uploads
 
   set_sleep_mode(SLEEP_MODE_IDLE);  // Set sleep mode to idle
 }
@@ -52,27 +46,7 @@ float readVoltage(int pin) {
   analogRead(pin);                 // throw first reading away
   delayMicroseconds(5);           // let ADC settle
   int analogValue = analogRead(pin);
-  return analogValue * (5.0 / 1023.0);
-}
-
-void showLoadingDots(const char* message, uint8_t x, uint8_t y, uint8_t cycles, uint16_t delayTime) {
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(x, y);
-  display.println(message);
-  display.display();
-
-  for (uint8_t i = 0; i < cycles; i++) {
-    for (uint8_t dots = 0; dots <= 3; dots++) {
-      display.fillRect(x + (strlen(message) * 6), y, 20, 8, BLACK); // clear dot area only
-      display.setCursor(x + (strlen(message) * 6), y);
-      for (uint8_t j = 0; j < dots; j++) {
-        display.print(".");
-      }
-      display.display();
-      delay(delayTime);
-    }
-  }
+  return analogValue * (5 / 1023.0); 
 }
 
 // ==== Display speed on OLED ====
