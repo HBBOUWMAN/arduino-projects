@@ -31,9 +31,7 @@ int freeMemory() {
 // ==== Setup ====
 void setup() {
   Serial.begin(9600);
-  // Hall sensor pin as input with pullup
   pinMode(hallPin, INPUT);
-  // U8g2 init
   display.begin();
 
   // ==== SD card detection ====
@@ -41,7 +39,7 @@ void setup() {
 
   display.firstPage();
   do {
-    display.setFont(u8g2_font_6x12_tf);
+    display.setFont(u8g2_font_6x12_tf); // check _xr font for lower RAM foot print
     display.drawStr(0, 12, sdOk ? "SD card detected" : "No SD card");
   } while (display.nextPage());
 
@@ -79,7 +77,7 @@ void updateSpeed(unsigned long timeDelta) {
   }
 }
 
-void printBufferAsHex(const char* buffer, int length) {
+void printBufferAsHex(const char* buffer, int length) { // temporary until SD card is implemented
  for (int i = 0; i < length; i++) {
    if ((uint8_t)buffer[i] < 16) Serial.print('0');
    Serial.print((uint8_t)buffer[i], HEX);
@@ -105,7 +103,7 @@ void bufferDeltaT(uint16_t deltaT) {
   }
 }
 
-// ==== Handle threshold crossing (now digital edge detect) ====
+// ==== Handle threshold crossing (digital edge detect) ====
 void handleHallSensor(bool currentState) {
   // Detect falling edge: HIGH -> LOW
   if (!currentState && aboveThreshold) {
@@ -140,9 +138,7 @@ void loop() {
 }
 
 
-// 4.4V battery @ 20mA ~ 0.088W
-// Sensor doesnt measure as accurate as with USB power, needs stronger field before activation. 
-// Maybe can change threshold voltage, use a better battery, or wait for a digital sensor.
+// 4.4V battery @ 20mA ~ 0.088W (analogue sensor)
 
-//1673 bytes (81%) of dynamic memory, leaving 375 bytes for local variables. Maximum is 2048 bytes. BUFFER = 5
-//1703 bytes (83%) of dynamic memory, leaving 345 bytes for local variables. Maximum is 2048 bytes. BUFFER = 20
+//1549 bytes (75%) of dynamic memory, leaving 499 bytes for local variables. BUFFER = 20
+
