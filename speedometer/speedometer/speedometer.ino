@@ -6,12 +6,14 @@
 // ==== OLED Setup ====
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C display(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
+
 // ==== Globals ====
-bool aboveThreshold = false;
+bool aboveThreshold = false; 
 unsigned long lastTriggerTime = 0;
 uint16_t deltaT = 0;
 unsigned long speed = 0;
 unsigned long totalDistance_mm = 0;
+const int hallPin = 2; // Digital pin D2
 
 // ==== Logging buffer ====
 #define LOG_ENTRIES_BEFORE_FLUSH 20
@@ -29,28 +31,22 @@ int freeMemory() {
 // ==== Setup ====
 void setup() {
   Serial.begin(9600);
-
+  // Hall sensor pin as input with pullup
+  pinMode(hallPin, INPUT);
   // U8g2 init
   display.begin();
-  display.clearBuffer();
 
   // ==== SD card detection ====
+  bool sdOk = SD.begin(10);
+
   display.firstPage();
   do {
     display.setFont(u8g2_font_6x12_tf);
-    display.drawStr(0, 28, SD.begin(10) ? "> SD card detected" : "> No SD card");
+    display.drawStr(0, 12, sdOk ? "SD card detected" : "No SD card");
   } while (display.nextPage());
 
-
   delay(2000);
-
   set_sleep_mode(SLEEP_MODE_IDLE);
-}
-
-// ==== Read analog voltage ====
-int readVoltage(int pin) {
-  analogRead(pin); delayMicroseconds(5);
-  return analogRead(pin); // raw 0–1023
 }
 
 // ==== Display speed on OLED ====
@@ -66,11 +62,11 @@ void displaySpeed(unsigned long spd) {
     do {
       // Speed
       display.setFont(u8g2_font_logisoso24_tr);
-      display.drawStr(0, 50, buf);
+      display.drawStr(0, 30, buf);
 
       // Unit
       display.setFont(u8g2_font_6x12_tf);
-      display.drawStr(90, 50, "km/h");
+      display.drawStr(0, 45, "km/h");
     } while (display.nextPage());
   }
 }
@@ -87,59 +83,51 @@ void printBufferAsHex(const char* buffer, int length) {
  for (int i = 0; i < length; i++) {
    if ((uint8_t)buffer[i] < 16) Serial.print('0');
    Serial.print((uint8_t)buffer[i], HEX);
- Serial.print(' ');
+   Serial.print(' ');
  }
  Serial.println();
 }
 
-// then call it like this
 void flushLogBuffer() {
-  if (logIndex == 0) return;  // Nothing to flush
-
+  if (logIndex == 0) return;  
   printBufferAsHex(logBuffer, logIndex);
   logIndex = 0;
 }
 
-// Buffer one deltaT value as 2 bytes
 void bufferDeltaT(uint16_t deltaT) {
-  // Check if there's room for 2 more bytes, flush if not
   if ((logIndex + sizeof(uint16_t)) > LOG_BUFFER_SIZE) {
     flushLogBuffer();
   }
-
-  // Copy 2 bytes of deltaT into buffer
   memcpy(logBuffer + logIndex, &deltaT, sizeof(uint16_t));
   logIndex += sizeof(uint16_t);
-
-  // Flush if buffer full (should happen only when full)
   if (logIndex >= LOG_BUFFER_SIZE) {
     flushLogBuffer();
   }
 }
 
-// ==== Handle threshold crossing ====
-void handleThresholdCrossing(int voltage, int threshold) {
-  if (voltage > threshold) {
-    if (!aboveThreshold) {
-      unsigned long currentTime = millis();
-      deltaT = currentTime - lastTriggerTime;
-      lastTriggerTime = currentTime;
+// ==== Handle threshold crossing (now digital edge detect) ====
+void handleHallSensor(bool currentState) {
+  // Detect falling edge: HIGH -> LOW
+  if (!currentState && aboveThreshold) {
+    unsigned long currentTime = millis();
+    deltaT = currentTime - lastTriggerTime;
+    lastTriggerTime = currentTime;
 
-      updateSpeed(deltaT);
-      totalDistance_mm += 2200;
+    updateSpeed(deltaT);
+    totalDistance_mm += 2200;
 
-      bufferDeltaT(deltaT);
-      aboveThreshold = true;
-    }
-  } else {
-    aboveThreshold = false;
+    bufferDeltaT(deltaT);
   }
+
+  // Save current state for next loop
+  aboveThreshold = currentState;
 }
+
 
 // ==== Main loop ====
 void loop() {
-  int voltage = readVoltage(A0);
-  handleThresholdCrossing(voltage, 614);
+  bool hallState = digitalRead(hallPin);  // HIGH idle, LOW = magnet present
+  handleHallSensor(hallState);
 
   if ((millis() - lastTriggerTime) > 10000 && speed != 0) {
     speed = 0;
